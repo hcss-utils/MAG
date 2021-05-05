@@ -29,7 +29,7 @@ install-dev: install
 	python -m pip install -r requirements-dev.txt
 
 black:
-	black REPO/
+	black mag/
 
 flake:
-	flake8 --ignore=E501 REPO/
+	flake8 --ignore=E501 mag/

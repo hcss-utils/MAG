@@ -1,6 +1,7 @@
-# About
+# MAG
 
-This repository contains **REPO** package that ... 
+This repository contains **Microsoft Academic Knowledge API wrapper** that 
+helps retrive information from Knowledge API. 
 
 
 ## Installation
@@ -9,8 +10,8 @@ This repository contains **REPO** package that ...
 To use or contribute to this repository, first checkout the code. Then create a new virtual environment:
 
 ```bash
-$ git clone https://github.com/hcss-utils/REPO.git
-$ cd REPO
+$ git clone https://github.com/hcss-utils/MAG.git
+$ cd MAG
 $ python3 -m venv env
 $ . env/bin/activate
 ```
@@ -30,9 +31,9 @@ Alternatively, use `make`:
 ### Google colab
 To use this package from google colab, run:
 ```bash
-!pip -q --no-cache-dir install git+https://github.com/hcss-utils/REPO.git
+!pip -q --no-cache-dir install git+https://github.com/hcss-utils/MAG.git
 ```
 
 ## Usage
 
-
+To be updated.

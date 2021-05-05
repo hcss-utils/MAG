@@ -1,11 +1,12 @@
 from setuptools import setup, find_packages
+from mag import __version__
 
 setup(
-    name='package name',
-    version='1.0.0',
-    url='https://github.com/mypackage.git',
-    author='Author Name',
-    author_email='author@gmail.com',
-    description='Description of my package',
-    packages=find_packages(),    
+    name="mag",
+    version=__version__,
+    url="https://github.com/hcss-utils/MAG.git",
+    author="htu",
+    author_email="hcssukraine@gmail.com",
+    description="MAG API wrapper",
+    packages=find_packages(),
 )
