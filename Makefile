@@ -23,7 +23,9 @@ clean-jupyter:
 	find . -name '*.ipynb_checkpoints' -exec rm -rf {} +
 
 install:
+	python -m pip install --upgrade pip setuptools wheel
 	python -m pip install -r requirements.txt
+	python -m pip install -e .
 
 install-dev: install
 	python -m pip install -r requirements-dev.txt
