@@ -1,11 +1,12 @@
 import requests
 import pandas as pd
 from time import sleep
-
+from .logger import logger
 
 class MAG:
     ENDPOINT = "https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate"
     ENTITIES = {
+        "Id": "mag_ID",
         "DN": "original_paper_title",
         "Ti": "normalized_title",
         "W": "normalized_words_in_title",
@@ -33,7 +34,6 @@ class MAG:
         key: str,
         count: int = 1_000,
         offset: int = 0,
-        max_results: int = 5_000,
         model: str = "latest",
         attr: str = "DN,Ti,W,AW,IA,AA.AuId,AA.DAuN,Y,D,DOI,J.JN,PB,ECC,F.DFN,F.FN",
     ):
@@ -41,7 +41,6 @@ class MAG:
         self.key = key
         self.count = count
         self.offset = offset
-        self.max_results = max_results
         self.model = model
         self.attr = attr
 
@@ -50,6 +49,7 @@ class MAG:
 
     def download_publications(self):
         """Download entities."""
+        logger.info(f"Calling Microsoft Academic API with the query: {self.expr}")
         records = list(self.yield_records())
         self.json_data = records
         self.table_data = (
@@ -57,13 +57,14 @@ class MAG:
             .drop(["prob", "logprob"], axis=1)
             .rename(columns=MAG.ENTITIES)
         )
+        logger.info(f"Downloaded {self.table_data.shape[0]} entries in total.")
 
     def fetch(self, url, params):
-        """Make a remote call to API."""
+        """Make a remote call to Microsoft Academic API."""
         return requests.get(url, params).json()
 
     def restore_abstract(self, abstract):
-        """Restores inverted abstract to its original form."""
+        """Restore inverted abstract to its original form."""
         words = abstract["InvertedIndex"]
         total_words = abstract["IndexLength"]
 
@@ -75,13 +76,13 @@ class MAG:
         return " ".join(text)
 
     def process(self, entities):
-        """ """
+        """Process entities: restore inverted abstracts to their raw form."""
         for entity in entities:
             entity["RA"] = self.restore_abstract(entity["IA"])
             yield entity
 
     def yield_records(self):
-        """ """
+        """Fetch all entities for a given query expression."""
         params = {
             "expr": self.expr,
             "offset": self.offset,
@@ -90,10 +91,13 @@ class MAG:
             "model": self.model,
             "subscription-key": self.key,
         }
-        toreturn = self.max_results
-        while toreturn >= 0:
+        downloaded = 0
+        while True:
             data = self.fetch(MAG.ENDPOINT, params)
+            if data["entities"] == []:
+              break
             yield from self.process(data["entities"])
-            toreturn -= self.count
             params["offset"] += self.count
+            downloaded += len(data["entities"])
+            logger.info(f'fetched {downloaded} entries.')
             sleep(3.1)
