@@ -18,8 +18,10 @@ $ . env/bin/activate
 
 Install the package and its dependencies
 ```bash
-(env)$ pip install -r requirements.txt 
-(env)$ pip install -r requirements-dev.txt
+(env)$ python -m pip install --upgrade pip setuptools wheel
+(env)$ python -m pip install -r requirements.txt
+(env)$ python -m pip install -r requirements-dev.txt
+(env)$ python -m pip install -e .
 ```
 
 Alternatively, use `make`:
