@@ -3,6 +3,7 @@ import pandas as pd
 from time import sleep
 from .logger import logger
 
+
 class MAG:
     ENDPOINT = "https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate"
     ENTITIES = {
@@ -95,9 +96,9 @@ class MAG:
         while True:
             data = self.fetch(MAG.ENDPOINT, params)
             if data["entities"] == []:
-              break
+                break
             yield from self.process(data["entities"])
             params["offset"] += self.count
             downloaded += len(data["entities"])
-            logger.info(f'fetched {downloaded} entries.')
+            logger.info(f"fetched {downloaded} entries.")
             sleep(3.1)
