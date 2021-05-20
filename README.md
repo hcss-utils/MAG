@@ -3,6 +3,10 @@
 This repository contains **Microsoft Academic Knowledge API wrapper** that 
 helps retrive information from Knowledge API. 
 
+Useful links:
+* [evaluate endpoint](https://msr-apis.portal.azure-api.net/docs/services/academic-search-api/operations/565d753be597ed16ac3ffc03?)
+* [paper entity attributes](https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes)
+
 
 ## Installation
 
@@ -38,4 +42,20 @@ To use this package from google colab, run:
 
 ## Usage
 
-To be updated.
+```python
+from mag import MAG
+
+# create an instance of MAG class
+organized_crime_publications = MAG(
+    expr="And(And(AW='organized', AW='crime', Y=[2000, 2020]), Composite(F.FN='political science'))",
+    key="2q3b955bfa210f9aa1a4eq35fa63378c",
+)
+
+# download data 
+organized_crime_publications.download_publications()
+
+# access data in json format
+organized_crime_publications.json_data
+# access data in tabular format
+organized_crime_publications.table_data
+```
