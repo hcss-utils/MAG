@@ -64,7 +64,7 @@ class MAG:
     def save(self, tocsv=None, tojson=None):
         """Write fetched data to files."""
         if tocsv is not None and self.table_data is not None:
-            self.table_data.to_csv(csv, index=False)
+            self.table_data.to_csv(tocsv, index=False)
         if tojson is not None and self.json_data is not None:
             with open(tojson, "w", encoding="utf-8") as f:
                 json.dump(self.json_data, f, ensure_ascii=False, indent=4)
