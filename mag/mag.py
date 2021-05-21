@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+import json
 import requests
 import pandas as pd
 from time import sleep
@@ -5,6 +7,44 @@ from .logger import logger
 
 
 class MAG:
+    """Papers retrieved from Microsoft Academic API.
+
+
+    Attributes
+    ----------
+    expr: str
+        query expression [1]
+    key: str
+        subscription key [2]
+    count: int, defaults to 1000
+        number of entities retrivied with each request
+    offset: int, defaults to 0
+        retrieve a subset of entities starting with the offset value
+    model: str, defaults to latest
+        API's internal model
+    attr: str, defaults to "DN,Ti,W,AW,IA,AA.AuId,AA.DAuN,Y,D,DOI,J.JN,PB,ECC,F.DFN,F.FN"
+        entity attributes to retrieve [3]
+
+
+    Usage
+    -----
+    >>> from mag import MAG
+    >>> pubs = MAG(
+            expr="And(And(AW='organized', AW='crime', Y=[2000, 2020]), Composite(F.FN='political science'))",
+            key="2q3b955bfa210f9aa1a4eq35fa63378c"
+        )
+    >>> pubs.download_publications()
+    >>> pubs.save(tocsv="../data/data.csv")
+    >>> pubs.save(tojson="../data/data.json")
+
+
+    References
+    ----------
+    [1] Query expression syntax, https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-query-expression-syntax
+    [2] Accessing Subscription key, https://msr-apis.portal.azure-api.net/
+    [3] Entity Attributes, https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes
+    """
+
     ENDPOINT = "https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate"
     ENTITIES = {
         "Id": "mag_ID",
@@ -15,18 +55,18 @@ class MAG:
         "RA": "restored_abstract",
         "IA": "inverted_abstract",
         "AA": "authors",
-        "AA.AuId": "author_id",
-        "AA.DAuN": "author_name",
+        "AuId": "author_id",
+        "DAuN": "author_name",
         "Y": "year_published",
         "D": "isodate_published",
         "DOI": "DOI",
         "J": "journals",
-        "J.JN": "journal_name",
+        "JN": "journal_name",
         "PB": "publisher",
         "ECC": "estimated_citation_count",
         "F": "fields",
-        "F.DFN": "field_of_study",
-        "F.FN": "normalized_field_of_study",
+        "DFN": "field_of_study",
+        "FN": "normalized_field_of_study",
     }
 
     def __init__(
@@ -52,13 +92,21 @@ class MAG:
         """Download entities."""
         logger.info(f"Calling Microsoft Academic API with the query: {self.expr}")
         records = list(self.yield_records())
-        self.json_data = records
+        self.json_data = [item["raw"] for item in records]
         self.table_data = (
-            pd.DataFrame(records)
+            pd.DataFrame([item["processed"] for item in records])
             .drop(["prob", "logprob"], axis=1)
             .rename(columns=MAG.ENTITIES)
         )
         logger.info(f"Downloaded {self.table_data.shape[0]} entries in total.")
+
+    def save(self, tocsv=None, tojson=None):
+        """Write fetched data to files."""
+        if tocsv is not None and self.table_data is not None:
+            self.table_data.to_csv(tocsv, index=False)
+        if tojson is not None and self.json_data is not None:
+            with open(tojson, "w", encoding="utf-8") as f:
+                json.dump(self.json_data, f, ensure_ascii=False, indent=4)
 
     def fetch(self, url, params):
         """Make a remote call to Microsoft Academic API."""
@@ -77,10 +125,29 @@ class MAG:
         return " ".join(text)
 
     def process(self, entities):
-        """Process entities: restore inverted abstracts to their raw form."""
-        for entity in entities:
-            entity["RA"] = self.restore_abstract(entity["IA"])
-            yield entity
+        """Process entities, including unnesting JSON and restoring
+        inverted abstracts to their raw form."""
+        for item in entities:
+            entity = item.copy()
+            if "IA" in entity.keys():
+                entity["RA"] = self.restore_abstract(entity["IA"])
+                del entity["IA"]
+            if "AA" in entity.keys():
+                entity["DAuN"] = ";".join(item["DAuN"] for item in entity["AA"])
+                entity["AuId"] = ";".join(str(item["AuId"]) for item in entity["AA"])
+                del entity["AA"]
+            if "F" in entity.keys():
+                entity["FN"] = ";".join(item["FN"] for item in entity["F"])
+                del entity["F"]
+            if "J" in entity.keys():
+                if isinstance(entity["J"], dict):
+                    entity["JN"] = entity["J"]["JN"]
+                elif isinstance(entity["J"], list):
+                    entity["JN"] = ";".join(item["JN"] for item in entity["J"])
+                else:
+                    entity["JN"] = entity["J"]
+                del entity["J"]
+            yield {"raw": item, "processed": entity}
 
     def yield_records(self):
         """Fetch all entities for a given query expression."""
