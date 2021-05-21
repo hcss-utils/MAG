@@ -55,18 +55,18 @@ class MAG:
         "RA": "restored_abstract",
         "IA": "inverted_abstract",
         "AA": "authors",
-        "AA.AuId": "author_id",
-        "AA.DAuN": "author_name",
+        "AuId": "author_id",
+        "DAuN": "author_name",
         "Y": "year_published",
         "D": "isodate_published",
         "DOI": "DOI",
         "J": "journals",
-        "J.JN": "journal_name",
+        "JN": "journal_name",
         "PB": "publisher",
         "ECC": "estimated_citation_count",
         "F": "fields",
-        "F.DFN": "field_of_study",
-        "F.FN": "normalized_field_of_study",
+        "DFN": "field_of_study",
+        "FN": "normalized_field_of_study",
     }
 
     def __init__(
@@ -92,9 +92,9 @@ class MAG:
         """Download entities."""
         logger.info(f"Calling Microsoft Academic API with the query: {self.expr}")
         records = list(self.yield_records())
-        self.json_data = records
+        self.json_data = [item["raw"] for item in records]
         self.table_data = (
-            pd.DataFrame(records)
+            pd.DataFrame([item["processed"] for item in records])
             .drop(["prob", "logprob"], axis=1)
             .rename(columns=MAG.ENTITIES)
         )
@@ -125,10 +125,29 @@ class MAG:
         return " ".join(text)
 
     def process(self, entities):
-        """Process entities: restore inverted abstracts to their raw form."""
-        for entity in entities:
-            entity["RA"] = self.restore_abstract(entity["IA"])
-            yield entity
+        """Process entities, including unnesting JSON and restoring
+        inverted abstracts to their raw form."""
+        for item in entities:
+            entity = item.copy()
+            if "IA" in entity.keys():
+                entity["RA"] = self.restore_abstract(entity["IA"])
+                del entity["IA"]
+            if "AA" in entity.keys():
+                entity["DAuN"] = ";".join(item["DAuN"] for item in entity["AA"])
+                entity["AuId"] = ";".join(str(item["AuId"]) for item in entity["AA"])
+                del entity["AA"]
+            if "F" in entity.keys():
+                entity["FN"] = ";".join(item["FN"] for item in entity["F"])
+                del entity["F"]
+            if "J" in entity.keys():
+                if isinstance(entity["J"], dict):
+                    entity["JN"] = entity["J"]["JN"]
+                elif isinstance(entity["J"], list):
+                    entity["JN"] = ";".join(item["JN"] for item in entity["J"])
+                else:
+                    entity["JN"] = entity["J"]
+                del entity["J"]
+            yield {"raw": item, "processed": entity}
 
     def yield_records(self):
         """Fetch all entities for a given query expression."""
