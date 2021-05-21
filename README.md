@@ -3,7 +3,8 @@
 This repository contains **Microsoft Academic Knowledge API wrapper** that 
 helps retrive information from Knowledge API. 
 
-Useful links:
+**Useful links**:
+* [requesting API key](https://msr-apis.portal.azure-api.net/)
 * [evaluate endpoint](https://msr-apis.portal.azure-api.net/docs/services/academic-search-api/operations/565d753be597ed16ac3ffc03?)
 * [paper entity attributes](https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes)
 
