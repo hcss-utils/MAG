@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import json
 import requests
 import pandas as pd
@@ -6,6 +7,44 @@ from .logger import logger
 
 
 class MAG:
+    """Papers retrieved from Microsoft Academic API.
+
+
+    Attributes
+    ----------
+    expr: str
+        query expression [1]
+    key: str
+        subscription key [2]
+    count: int, defaults to 1000
+        number of entities retrivied with each request
+    offset: int, defaults to 0
+        retrieve a subset of entities starting with the offset value
+    model: str, defaults to latest
+        API's internal model
+    attr: str, defaults to "DN,Ti,W,AW,IA,AA.AuId,AA.DAuN,Y,D,DOI,J.JN,PB,ECC,F.DFN,F.FN"
+        entity attributes to retrieve [3]
+
+
+    Usage
+    -----
+    >>> from mag import MAG
+    >>> pubs = MAG(
+            expr="And(And(AW='organized', AW='crime', Y=[2000, 2020]), Composite(F.FN='political science'))",
+            key="2q3b955bfa210f9aa1a4eq35fa63378c"
+        )
+    >>> pubs.download_publications()
+    >>> pubs.save(tocsv="../data/data.csv")
+    >>> pubs.save(tojson="../data/data.json")
+
+
+    References
+    ----------
+    [1] Query expression syntax, https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-query-expression-syntax
+    [2] Accessing Subscription key, https://msr-apis.portal.azure-api.net/
+    [3] Entity Attributes, https://docs.microsoft.com/en-us/academic-services/project-academic-knowledge/reference-paper-entity-attributes
+    """
+
     ENDPOINT = "https://api.labs.cognitive.microsoft.com/academic/v1.0/evaluate"
     ENTITIES = {
         "Id": "mag_ID",

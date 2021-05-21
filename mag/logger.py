@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 import logging
 
 
 def create_logger(name: str):
+    """Create logger with DEBUG level & stream handler."""
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)
     sh = logging.StreamHandler()
