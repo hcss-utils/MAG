@@ -114,7 +114,7 @@ class MAG:
         for idx, fid in enumerate(unique_foses):
             params.update(expr=f"Composite(FP.FId={fid})")
             data = self.fetch(MAG.ENDPOINT, params)
-            self.json_foses.append(data)
+            self.json_foses.append(data["entities"])
             logger.info(f"fetched {idx} foses, {fid}.")
         logger.info(f"fetched {len(self.json_foses)} foses.")
         return self.json_foses
