@@ -63,10 +63,8 @@ class MAG:
         "J": "journals",
         "JN": "journal_name",
         "PB": "publisher",
-        "ECC": "estimated_citation_count",
-        "F": "fields",
-        "DFN": "field_of_study",
-        "FN": "normalized_field_of_study",
+        "FId": "field_of_study_id",
+        "FN": "field_of_study",
     }
 
     def __init__(
@@ -76,21 +74,23 @@ class MAG:
         count: int = 1_000,
         offset: int = 0,
         model: str = "latest",
-        attr: str = "DN,Ti,W,AW,IA,AA.AuId,AA.DAuN,Y,D,DOI,J.JN,PB,ECC,F.DFN,F.FN",
+        attr: str = "DN,Ti,W,AW,IA,AA.AuId,AA.DAuN,Y,D,DOI,J.JN,PB,F.FId,F.FN",
     ):
-        self.expr = expr
-        self.key = key
-        self.count = count
-        self.offset = offset
-        self.model = model
-        self.attr = attr
-
+        self.params = {
+            "expr": expr,
+            "offset": offset,
+            "count": count,
+            "attributes": attr,
+            "model": model,
+            "subscription-key": key,
+        }
         self.json_data = None
         self.table_data = None
 
+
     def download_publications(self):
         """Download entities."""
-        logger.info(f"Calling Microsoft Academic API with the query: {self.expr}")
+        logger.info(f"Calling Microsoft Academic API with the query: {self.params['expr']}")
         records = list(self.yield_records())
         self.json_data = [item["raw"] for item in records]
         self.table_data = (
@@ -99,6 +99,27 @@ class MAG:
             .rename(columns=MAG.ENTITIES)
         )
         logger.info(f"Downloaded {self.table_data.shape[0]} entries in total.")
+
+    def fetch_foses(self, attr="Id,ECC,FL,FN,FC.FId,FC.FN,FP.FId,FP.FN"):
+        """ """
+        if self.json_data is None:
+            raise ValueError("run .download_publications first.")
+        unique_foses = {
+            f["FId"] 
+            for entity in self.json_data 
+            for f in entity["F"]
+        }
+        params = self.params.copy()
+        params.update(attr=attr)
+        for idx, fid in enumerate(unique_foses):
+            params.update(expr=f"Composite(FP.FId={fid})")
+            data = self.fetch(MAG.ENDPOINT, params)
+            self.json_foses.append(data)
+            if idx % 100 == 0:
+                logger.info(f"fetched {idx} foses.")
+        logger.info(f"fetched {len(self.json_foses)} foses.")
+        return self.json_foses
+
 
     def save(self, tocsv=None, tojson=None):
         """Write fetched data to files."""
@@ -151,21 +172,14 @@ class MAG:
 
     def yield_records(self):
         """Fetch all entities for a given query expression."""
-        params = {
-            "expr": self.expr,
-            "offset": self.offset,
-            "count": self.count,
-            "attributes": self.attr,
-            "model": self.model,
-            "subscription-key": self.key,
-        }
+        params = self.params.copy()
         downloaded = 0
         while True:
             data = self.fetch(MAG.ENDPOINT, params)
             if data["entities"] == []:
                 break
             yield from self.process(data["entities"])
-            params["offset"] += self.count
+            params["offset"] += params["count"]
             downloaded += len(data["entities"])
             logger.info(f"fetched {downloaded} entries.")
             sleep(3.1)
