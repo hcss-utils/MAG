@@ -101,7 +101,7 @@ class MAG:
         logger.info(f"Downloaded {self.table_data.shape[0]} entries in total.")
 
     def fetch_foses(self, attr="Id,ECC,FL,FN,FC.FId,FC.FN,FP.FId,FP.FN"):
-        """ """
+        """Download fields of study attributes."""
         if self.json_data is None:
             raise ValueError("run .download_publications first.")
         unique_foses = {
@@ -110,13 +110,12 @@ class MAG:
             for f in entity["F"]
         }
         params = self.params.copy()
-        params.update(attr=attr)
+        params.update(attributes=attr)
         for idx, fid in enumerate(unique_foses):
             params.update(expr=f"Composite(FP.FId={fid})")
             data = self.fetch(MAG.ENDPOINT, params)
             self.json_foses.append(data)
-            if idx % 100 == 0:
-                logger.info(f"fetched {idx} foses.")
+            logger.info(f"fetched {idx} foses, {fid}.")
         logger.info(f"fetched {len(self.json_foses)} foses.")
         return self.json_foses
 
