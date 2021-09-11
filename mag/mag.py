@@ -101,7 +101,7 @@ class MAG:
         )
         logger.info(f"Downloaded {self.table_data.shape[0]} entries in total.")
 
-    def fetch_foses(self, attr="Id,ECC,FL,FN,FC.FId,FC.FN,FP.FId,FP.FN"):
+    def fetch_foses(self, attr="Id,ECC,FL,FN,FC.FId,FC.FN,FP.FId,FP.FN", count=1):
         """Download fields of study attributes."""
         if self.json_data is None:
             raise ValueError("run .download_publications first.")
@@ -117,8 +117,9 @@ class MAG:
         foses = []
         params = self.params.copy()
         params.update(attributes=attr)
+        params.update(count=count)
         for idx, fid in enumerate(unique_foses):
-            params.update(expr=f"Composite(FP.FId={fid})")
+            params.update(expr=f"And(Id={fid}, Ty='6')")
             data = self.fetch(MAG.ENDPOINT, params)
             try:
                 foses.append(data["entities"])
@@ -137,6 +138,9 @@ class MAG:
         if tojson is not None and self.json_data is not None:
             with open(tojson, "w", encoding="utf-8") as f:
                 json.dump(self.json_data, f, ensure_ascii=False, indent=4)
+        if tojson is not None and self.json_foses is not None:
+            with open(tojson.strip(".json") + "_foses.json", "w", encoding="utf-8") as f:
+                json.dump(self.json_foses, f, ensure_ascii=False, indent=4)
 
     def fetch(self, url, params):
         """Make a remote call to Microsoft Academic API."""
