@@ -122,7 +122,7 @@ class MAG:
             params.update(expr=f"And(Id={fid}, Ty='6')")
             data = self.fetch(MAG.ENDPOINT, params)
             try:
-                foses.append(data["entities"])
+                foses.append(data["entities"][0])
             except TypeError:
                 logger.exception(idx)
             if idx % 100 == 0:
@@ -139,7 +139,7 @@ class MAG:
             with open(tojson, "w", encoding="utf-8") as f:
                 json.dump(self.json_data, f, ensure_ascii=False, indent=4)
         if tojson is not None and self.json_foses is not None:
-            with open(tojson.strip(".json") + "_foses.json", "w", encoding="utf-8") as f:
+            with open(tojson.rstrip(".json") + "_foses.json", "w", encoding="utf-8") as f:
                 json.dump(self.json_foses, f, ensure_ascii=False, indent=4)
 
     def fetch(self, url, params):
