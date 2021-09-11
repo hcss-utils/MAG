@@ -85,6 +85,7 @@ class MAG:
             "subscription-key": key,
         }
         self.json_data = None
+        self.json_foses = None
         self.table_data = None
 
 
@@ -104,21 +105,30 @@ class MAG:
         """Download fields of study attributes."""
         if self.json_data is None:
             raise ValueError("run .download_publications first.")
+        if self.json_foses is not None:
+            raise ValueError("fields of studies has already been fetched.")
         unique_foses = {
             f["FId"] 
             for entity in self.json_data 
             for f in entity["F"]
         }
+        logger.info(f"identified {len(unique_foses)} unique fields of study...")
+
+        foses = []
         params = self.params.copy()
         params.update(attributes=attr)
         for idx, fid in enumerate(unique_foses):
             params.update(expr=f"Composite(FP.FId={fid})")
             data = self.fetch(MAG.ENDPOINT, params)
-            self.json_foses.append(data["entities"])
-            logger.info(f"fetched {idx} foses, {fid}.")
+            try:
+                foses.append(data["entities"])
+            except TypeError:
+                logger.exception(idx)
+            if idx % 100 == 0:
+                logger.info(f"fetched {idx} foses.")
+        self.json_foses = foses
         logger.info(f"fetched {len(self.json_foses)} foses.")
-        return self.json_foses
-
+        return foses
 
     def save(self, tocsv=None, tojson=None):
         """Write fetched data to files."""
