@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import json
-import requests
-import pandas as pd
 from time import sleep
+
+import pandas as pd
+import requests
+
 from .logger import logger
 
 
@@ -88,10 +90,11 @@ class MAG:
         self.json_foses = None
         self.table_data = None
 
-
     def download_publications(self):
         """Download entities."""
-        logger.info(f"Calling Microsoft Academic API with the query: {self.params['expr']}")
+        logger.info(
+            f"Calling Microsoft Academic API with the query: {self.params['expr']}"
+        )
         records = list(self.yield_records())
         self.json_data = [item["raw"] for item in records]
         self.table_data = (
@@ -107,11 +110,7 @@ class MAG:
             raise ValueError("run .download_publications first.")
         if self.json_foses is not None:
             raise ValueError("fields of studies has already been fetched.")
-        unique_foses = {
-            f["FId"] 
-            for entity in self.json_data 
-            for f in entity["F"]
-        }
+        unique_foses = {f["FId"] for entity in self.json_data for f in entity["F"]}
         logger.info(f"identified {len(unique_foses)} unique fields of study...")
 
         foses = []
@@ -139,14 +138,18 @@ class MAG:
             with open(tojson, "w", encoding="utf-8") as f:
                 json.dump(self.json_data, f, ensure_ascii=False, indent=4)
         if tojson is not None and self.json_foses is not None:
-            with open(tojson.rstrip(".json") + "_foses.json", "w", encoding="utf-8") as f:
+            with open(
+                tojson.rstrip(".json") + "_foses.json", "w", encoding="utf-8"
+            ) as f:
                 json.dump(self.json_foses, f, ensure_ascii=False, indent=4)
 
-    def fetch(self, url, params):
+    @staticmethod
+    def fetch(url, params):
         """Make a remote call to Microsoft Academic API."""
         return requests.get(url, params).json()
 
-    def restore_abstract(self, abstract):
+    @staticmethod
+    def restore_abstract(abstract):
         """Restore inverted abstract to its original form."""
         words = abstract["InvertedIndex"]
         total_words = abstract["IndexLength"]
